@@ -1,5 +1,13 @@
 const EXTENSIONS = [
   {
+    id: "geohot-blog-dark",
+    name: "Geohot Blog Dark Mode",
+    description: "Dark mode for geohot.github.io/blog.",
+    version: "0.1.0",
+    matches: ["https://geohot.github.io/blog/*"],
+    contentScript: "extensions/geohot-blog-dark/content.js",
+  },
+  {
     id: "hn-auto-collapse",
     name: "HN Auto Collapse",
     description: "Auto-collapses Hacker News comments, showing the first 5 top-level comments and their first reply.",
