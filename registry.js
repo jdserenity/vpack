@@ -1,5 +1,14 @@
 const EXTENSIONS = [
   {
+    id: "word-count",
+    name: "Quick Copy",
+    description: "Counts words and copies the main content of any page to your clipboard.",
+    version: "0.1.0",
+    matches: ["*"],
+    contentScript: "extensions/word-count/content.js",
+    liveAction: "getWordCount",
+  },
+  {
     id: "geohot-blog-dark",
     name: "Geohot Blog Dark Mode",
     description: "Dark mode for geohot.github.io/blog.",

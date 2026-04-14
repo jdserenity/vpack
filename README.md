@@ -1,11 +1,11 @@
-# ArcPack
+# VPack
 
 A single Chrome extension that bundles multiple micro extensions, each doing one specific thing. Avoids cluttering the extensions page while letting you customize your browser however you want.
 
 ## Structure
 
 ```
-ArcPack/
+VPack/
   manifest.json          # Chrome MV3 extension manifest
   background.js          # Service worker - injects scripts for enabled extensions
   registry.js            # Central list of all micro extensions
@@ -41,4 +41,4 @@ ArcPack/
 
 1. Go to `chrome://extensions`
 2. Enable "Developer mode"
-3. Click "Load unpacked" and select the `ArcPack/` folder
+3. Click "Load unpacked" and select the `VPack/` folder

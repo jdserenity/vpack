@@ -42,6 +42,17 @@ chrome.storage.local.get(
             <span class="ext-name">${ext.name}</span>
             <span class="ext-version">v${ext.version}</span>
             <div class="ext-desc">${ext.description}</div>
+            ${ext.liveAction ? `
+              <div class="ext-live-row">
+                <div class="ext-live-result">—</div>
+                <button class="ext-copy-icon" title="Copy page text" disabled>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            ` : ""}
           </div>
           <label class="toggle">
             <input type="checkbox" data-id="${ext.id}" ${enabled ? "checked" : ""} />
@@ -50,6 +61,35 @@ chrome.storage.local.get(
         </div>
         ${settingsHtml ? `<div class="ext-settings">${settingsHtml}</div>` : ""}
       `;
+
+      if (ext.liveAction && enabled) {
+        const resultEl = card.querySelector(".ext-live-result");
+        const copyBtn = card.querySelector(".ext-copy-icon");
+        let cachedText = null;
+
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (!tabs[0]) return;
+          chrome.tabs.sendMessage(tabs[0].id, { action: ext.liveAction }, (response) => {
+            if (chrome.runtime.lastError || !response) {
+              resultEl.textContent = "Reload page to count";
+              return;
+            }
+            resultEl.textContent = response.count.toLocaleString() + " words";
+            if (response.text) {
+              cachedText = response.text;
+              copyBtn.disabled = false;
+            }
+          });
+        });
+
+        copyBtn.addEventListener("click", () => {
+          if (!cachedText) return;
+          navigator.clipboard.writeText(cachedText).then(() => {
+            copyBtn.classList.add("copied");
+            setTimeout(() => copyBtn.classList.remove("copied"), 2000);
+          });
+        });
+      }
 
       card.querySelector("input[type='checkbox']").addEventListener("change", (e) => {
         chrome.storage.local.set({ [ext.id]: e.target.checked });

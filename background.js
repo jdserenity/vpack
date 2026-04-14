@@ -43,8 +43,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   );
 });
 
-// Simple pattern matcher that supports trailing wildcards.
+// Simple pattern matcher that supports trailing wildcards and "*" for all URLs.
 function urlMatchesPattern(url, pattern) {
+  if (pattern === "*") return true;
   if (pattern.endsWith("*")) {
     return url.startsWith(pattern.slice(0, -1));
   }

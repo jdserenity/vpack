@@ -1,8 +1,8 @@
 // YouTube Speed Hotkeys v0.1.0
-// Configure two shortcuts in ArcPack popup settings to adjust playback speed by +/-0.05.
+// Configure two shortcuts in VPack popup settings to adjust playback speed by +/-0.05.
 (() => {
-  if (window.__arcpackYoutubeSpeedHotkeysLoaded) return;
-  window.__arcpackYoutubeSpeedHotkeysLoaded = true;
+  if (window.__vpackYoutubeSpeedHotkeysLoaded) return;
+  window.__vpackYoutubeSpeedHotkeysLoaded = true;
 
   const STORAGE_KEYS = {
     faster: "youtube-speed-hotkeys.settings.hotkeyFaster",
@@ -76,15 +76,15 @@
     try {
       showSpeedToast(video.playbackRate);
     } catch (err) {
-      console.error("[ArcPack][YouTube Speed] Toast render failed:", err);
+      console.error("[VPack][YouTube Speed] Toast render failed:", err);
     }
   }
 
   function showSpeedToast(rate) {
-    let toast = document.getElementById("arcpack-speed-toast");
+    let toast = document.getElementById("vpack-speed-toast");
     if (!toast) {
       toast = document.createElement("div");
-      toast.id = "arcpack-speed-toast";
+      toast.id = "vpack-speed-toast";
       Object.assign(toast.style, {
         position: "fixed",
         left: "50%",
