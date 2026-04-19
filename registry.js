@@ -1,7 +1,7 @@
 const EXTENSIONS = [
   {
     id: "onlinenotes-expand",
-    name: "Online Notes Expand",
+    name: "onlinenotes Hijack",
     description: "Makes the text editor on onlinenotes.app fill the entire screen. Responsive to Vivaldi tab tiling.",
     version: "0.1.0",
     matches: ["https://onlinenotes.app/*"],

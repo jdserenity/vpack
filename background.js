@@ -25,47 +25,61 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action !== "onlinenotes-open-new") return;
 
+  const openerTitle = message.openerTitle ?? null;
+
   const createProps = { url: "https://onlinenotes.app/" };
   if (message.openerTabId) createProps.openerTabId = message.openerTabId;
-    chrome.tabs.create(createProps, (tab) => {
-      const listenerId = (tabId, changeInfo) => {
-        if (tabId !== tab.id || changeInfo.status !== "complete") return;
-        chrome.tabs.onUpdated.removeListener(listenerId);
+  chrome.tabs.create(createProps, (tab) => {
+    const listenerId = (tabId, changeInfo) => {
+      if (tabId !== tab.id || changeInfo.status !== "complete") return;
+      chrome.tabs.onUpdated.removeListener(listenerId);
 
-        // Poll for the generated note link — it may be inserted by JS after load.
-        let attempts = 0;
-        const poll = setInterval(() => {
-          attempts++;
-          chrome.scripting.executeScript(
-            {
-              target: { tabId: tab.id },
-              func: () => {
-                const a = document.querySelector(
-                  'a[href^="https://onlinenotes.app/"]'
-                );
-                // Ignore the homepage link itself
-                if (!a) return null;
-                const href = a.getAttribute("href");
-                if (href === "https://onlinenotes.app/" || href === "https://onlinenotes.app") return null;
-                return href;
-              },
+      // Poll for the generated note link — it may be inserted by JS after load.
+      let attempts = 0;
+      const poll = setInterval(() => {
+        attempts++;
+        chrome.scripting.executeScript(
+          {
+            target: { tabId: tab.id },
+            func: () => {
+              const a = document.querySelector(
+                'a[href^="https://onlinenotes.app/"]'
+              );
+              // Ignore the homepage link itself
+              if (!a) return null;
+              const href = a.getAttribute("href");
+              if (href === "https://onlinenotes.app/" || href === "https://onlinenotes.app") return null;
+              return href;
             },
-            ([result]) => {
-              const noteUrl = result?.result;
-              if (noteUrl) {
-                clearInterval(poll);
-                chrome.tabs.update(tab.id, { url: noteUrl });
-              } else if (attempts >= 40) {
-                // Give up after ~4 seconds — the tab stays on the homepage.
-                clearInterval(poll);
-              }
+          },
+          ([result]) => {
+            const noteUrl = result?.result;
+            if (noteUrl) {
+              clearInterval(poll);
+              chrome.tabs.update(tab.id, { url: noteUrl }, () => {
+                if (!openerTitle) return;
+                const titleListenerId = (titleTabId, titleChangeInfo) => {
+                  if (titleTabId !== tab.id || titleChangeInfo.status !== "complete") return;
+                  chrome.tabs.onUpdated.removeListener(titleListenerId);
+                  chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: (title) => { document.title = title; },
+                    args: [`Quick Note - ${openerTitle}`],
+                  });
+                };
+                chrome.tabs.onUpdated.addListener(titleListenerId);
+              });
+            } else if (attempts >= 40) {
+              // Give up after ~4 seconds — the tab stays on the homepage.
+              clearInterval(poll);
             }
-          );
-        }, 100);
-      };
+          }
+        );
+      }, 100);
+    };
 
-      chrome.tabs.onUpdated.addListener(listenerId);
-    });
+    chrome.tabs.onUpdated.addListener(listenerId);
+  });
 });
 
 // Inject matching content scripts when a page finishes loading.

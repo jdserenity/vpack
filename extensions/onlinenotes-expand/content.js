@@ -1,4 +1,4 @@
-// onlinenotes-expand v0.1.0
+// onlinenotes Hijack v0.1.0
 // Forces the textarea on onlinenotes.app to fill the entire viewport,
 // and stays responsive to Vivaldi tab tiling / resize via ResizeObserver.
 
@@ -50,6 +50,15 @@
     }
   `;
   document.head.appendChild(style);
+
+  // Insert two spaces on Tab, instead of letting the browser move focus.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
+    const el = document.activeElement;
+    if (!el || (el.tagName !== "TEXTAREA" && !el.isContentEditable)) return;
+    e.preventDefault();
+    document.execCommand("insertText", false, "  ");
+  }, true);
 
   // ResizeObserver keeps the textarea snapped to the viewport whenever
   // Vivaldi reflows the tab tile (the viewport size changes).

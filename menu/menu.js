@@ -122,6 +122,7 @@ chrome.storage.local.get(
               chrome.runtime.sendMessage({
                 action: "onlinenotes-open-new",
                 openerTabId: activeTab?.id,
+                openerTitle: activeTab?.title ?? null,
               });
             });
           }
