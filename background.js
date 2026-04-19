@@ -20,6 +20,54 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// Open a fresh onlinenotes.app note, wait for the generated URL link to appear,
+// then redirect the tab to that permanent note URL.
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.action !== "onlinenotes-open-new") return;
+
+  const createProps = { url: "https://onlinenotes.app/" };
+  if (message.openerTabId) createProps.openerTabId = message.openerTabId;
+    chrome.tabs.create(createProps, (tab) => {
+      const listenerId = (tabId, changeInfo) => {
+        if (tabId !== tab.id || changeInfo.status !== "complete") return;
+        chrome.tabs.onUpdated.removeListener(listenerId);
+
+        // Poll for the generated note link — it may be inserted by JS after load.
+        let attempts = 0;
+        const poll = setInterval(() => {
+          attempts++;
+          chrome.scripting.executeScript(
+            {
+              target: { tabId: tab.id },
+              func: () => {
+                const a = document.querySelector(
+                  'a[href^="https://onlinenotes.app/"]'
+                );
+                // Ignore the homepage link itself
+                if (!a) return null;
+                const href = a.getAttribute("href");
+                if (href === "https://onlinenotes.app/" || href === "https://onlinenotes.app") return null;
+                return href;
+              },
+            },
+            ([result]) => {
+              const noteUrl = result?.result;
+              if (noteUrl) {
+                clearInterval(poll);
+                chrome.tabs.update(tab.id, { url: noteUrl });
+              } else if (attempts >= 40) {
+                // Give up after ~4 seconds — the tab stays on the homepage.
+                clearInterval(poll);
+              }
+            }
+          );
+        }, 100);
+      };
+
+      chrome.tabs.onUpdated.addListener(listenerId);
+    });
+});
+
 // Inject matching content scripts when a page finishes loading.
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return;

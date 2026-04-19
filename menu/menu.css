@@ -152,6 +152,38 @@ h1 {
   border-color: #6c5ce7;
 }
 
+/* Menu action buttons */
+.ext-menu-actions {
+  margin-top: 10px;
+  border-top: 1px solid #2a2a4a;
+  padding-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ext-menu-action {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e8ecff;
+  background: #2d3a6e;
+  border: 1px solid #3d4f8e;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ext-menu-action:hover {
+  background: #3a4a8a;
+  border-color: #6c5ce7;
+}
+
+.ext-menu-action:active {
+  background: #6c5ce7;
+  border-color: #6c5ce7;
+}
+
 /* Toggle switch */
 .toggle {
   position: relative;

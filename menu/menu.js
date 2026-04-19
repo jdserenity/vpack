@@ -36,6 +36,16 @@ chrome.storage.local.get(
         })
         .join("");
 
+      const menuActionsHtml = (ext.menuActions || [])
+        .map(
+          (ma) => `
+            <button class="ext-menu-action" data-action="${escapeHtml(ma.action)}">
+              ${escapeHtml(ma.label)}
+            </button>
+          `
+        )
+        .join("");
+
       card.innerHTML = `
         <div class="ext-main">
           <div class="ext-info">
@@ -59,6 +69,7 @@ chrome.storage.local.get(
             <span class="slider"></span>
           </label>
         </div>
+        ${menuActionsHtml ? `<div class="ext-menu-actions">${menuActionsHtml}</div>` : ""}
         ${settingsHtml ? `<div class="ext-settings">${settingsHtml}</div>` : ""}
       `;
 
@@ -101,6 +112,20 @@ chrome.storage.local.get(
         };
         input.addEventListener("change", saveSetting);
         input.addEventListener("blur", saveSetting);
+      });
+
+      card.querySelectorAll(".ext-menu-action").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const action = btn.dataset.action;
+          if (action === "openNewNote") {
+            chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
+              chrome.runtime.sendMessage({
+                action: "onlinenotes-open-new",
+                openerTabId: activeTab?.id,
+              });
+            });
+          }
+        });
       });
 
       container.appendChild(card);
