@@ -1,7 +1,16 @@
 const EXTENSIONS = [
   {
+    id: "word-count",
+    name: "Quick Copy",
+    description: "Counts words and copies the main content of any page to your clipboard.",
+    version: "0.1.0",
+    matches: ["*"],
+    contentScript: "extensions/word-count/content.js",
+    liveAction: "getWordCount",
+  },
+  {
     id: "onlinenotes-expand",
-    name: "onlinenotes Hijack",
+    name: "Online Notes Hijack",
     description: "Makes the text editor on onlinenotes.app fill the entire screen. Responsive to Vivaldi tab tiling.",
     version: "0.1.0",
     matches: ["https://onlinenotes.app/*"],
@@ -12,15 +21,6 @@ const EXTENSIONS = [
         action: "openNewNote",
       },
     ],
-  },
-  {
-    id: "word-count",
-    name: "Quick Copy",
-    description: "Counts words and copies the main content of any page to your clipboard.",
-    version: "0.1.0",
-    matches: ["*"],
-    contentScript: "extensions/word-count/content.js",
-    liveAction: "getWordCount",
   },
   {
     id: "geohot-blog-dark",
@@ -63,5 +63,13 @@ const EXTENSIONS = [
         placeholder: "Command+Shift+Comma",
       },
     ],
+  },
+  {
+    id: "grok-focus",
+    name: "Grok Focus",
+    description: "Press Escape to jump focus from the Vivaldi URL bar into Grok's text entry box.",
+    version: "0.1.0",
+    matches: ["https://grok.com/*", "https://x.ai/*"],
+    contentScript: "extensions/grok-focus/content.js",
   },
 ];
