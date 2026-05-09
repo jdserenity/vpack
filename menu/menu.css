@@ -46,6 +46,49 @@ h1 {
   background: #1a2745;
 }
 
+.ext-hidden-dropdown {
+  margin-top: 10px;
+  background: #16213e;
+  border-radius: 8px;
+  border: 1px solid #2a2a4a;
+}
+
+.ext-hidden-summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9fa8c6;
+  padding: 10px 12px;
+  user-select: none;
+}
+
+.ext-hidden-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ext-hidden-summary::before {
+  content: "▸";
+  margin-right: 6px;
+  color: #a29bfe;
+}
+
+.ext-hidden-dropdown[open] .ext-hidden-summary::before {
+  content: "▾";
+}
+
+.ext-hidden-list {
+  padding: 0 8px 8px;
+}
+
+.ext-hidden-list .ext-card {
+  margin-bottom: 8px;
+}
+
+.ext-hidden-list .ext-card:last-child {
+  margin-bottom: 0;
+}
+
 .ext-main {
   display: flex;
   justify-content: space-between;
@@ -83,6 +126,12 @@ h1 {
   margin-top: 6px;
 }
 
+.ext-copy-only-row {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-start;
+}
+
 .ext-copy-icon {
   display: flex;
   align-items: center;
@@ -102,6 +151,10 @@ h1 {
 
 .ext-copy-icon.copied {
   color: #55efc4;
+}
+
+.ext-copy-icon.error {
+  color: #d6577d;
 }
 
 .ext-copy-icon:disabled {

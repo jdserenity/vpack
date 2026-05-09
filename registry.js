@@ -9,6 +9,19 @@ const EXTENSIONS = [
     liveAction: "getWordCount",
   },
   {
+    id: "youtube-transcript-copy",
+    name: "YouTube Transcript Copy",
+    description: "Copies the full transcript of the current YouTube video to your clipboard.",
+    version: "0.1.0",
+    matches: [
+      "https://www.youtube.com/*",
+      "https://youtube.com/*",
+      "https://m.youtube.com/*",
+    ],
+    contentScript: "extensions/youtube-transcript-copy/content.js",
+    copyIconAction: "copyYoutubeTranscript",
+  },
+  {
     id: "onlinenotes-expand",
     name: "Online Notes Hijack",
     description: "Makes the text editor on onlinenotes.app fill the entire screen. Responsive to Vivaldi tab tiling.",
@@ -63,13 +76,5 @@ const EXTENSIONS = [
         placeholder: "Command+Shift+Comma",
       },
     ],
-  },
-  {
-    id: "grok-focus",
-    name: "Grok Focus",
-    description: "Press Escape to jump focus from the Vivaldi URL bar into Grok's text entry box.",
-    version: "0.1.0",
-    matches: ["https://grok.com/*", "https://x.ai/*"],
-    contentScript: "extensions/grok-focus/content.js",
   },
 ];
