@@ -149,7 +149,7 @@ h1 {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: color 0.15s;
+  transition: color 0.28s ease-in-out;
 }
 
 .ext-copy-icon:hover:not(:disabled) {
@@ -157,6 +157,11 @@ h1 {
 }
 
 .ext-copy-icon.copied {
+  color: #55efc4;
+}
+
+.ext-copy-icon.copied:hover:not(:disabled),
+.ext-copy-icon.copied:focus-visible:not(:disabled) {
   color: #55efc4;
 }
 

@@ -102,6 +102,7 @@ For transcript requests, popup uses a send-then-inject retry path:
 `background.js` uses a small custom matcher:
 
 - `"*"` matches all URLs
+- repeated slashes in URL path segments are normalized (for example `//blog/...` -> `/blog/...`) before matching
 - patterns ending in `*` perform prefix matching
 - all other patterns require exact URL equality
 

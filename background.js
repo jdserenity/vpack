@@ -1,4 +1,5 @@
 importScripts("registry.js");
+importScripts("url-matcher.js");
 
 // Set all extensions enabled by default on install.
 chrome.runtime.onInstalled.addListener(() => {
@@ -104,15 +105,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
   );
 });
-
-// Simple pattern matcher that supports trailing wildcards and "*" for all URLs.
-function urlMatchesPattern(url, pattern) {
-  if (pattern === "*") return true;
-  if (pattern.endsWith("*")) {
-    return url.startsWith(pattern.slice(0, -1));
-  }
-  return url === pattern;
-}
 
 function getSettingStorageKey(ext, settingKey) {
   return `${ext.id}.settings.${settingKey}`;
