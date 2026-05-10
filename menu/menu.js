@@ -1,4 +1,7 @@
 const container = document.getElementById("extensions");
+const YT_LOG_PREFIX = "[VPack][YT Transcript][Popup]";
+let ytLogSeq = 0;
+const popupBootAt = Date.now();
 const HIDDEN_EXTENSION_IDS = new Set([
   "geohot-blog-dark",
   "hn-auto-collapse",
@@ -13,11 +16,24 @@ const storageKeys = [
 ];
 
 // Build UI for each micro extension.
+ytLog("popup boot", {
+  hasContainer: Boolean(container),
+  extensionsInRegistry: EXTENSIONS.length,
+});
 chrome.storage.local.get(storageKeys, (stored) => {
+  ytLog("storage loaded for menu", {
+    storageKeyCount: storageKeys.length,
+    storedKeyCount: Object.keys(stored || {}).length,
+  });
   const visibleExtensions = [];
   const hiddenExtensions = [];
 
   for (const ext of EXTENSIONS) {
+    ytLog("classifying extension", {
+      id: ext.id,
+      hidden: HIDDEN_EXTENSION_IDS.has(ext.id),
+      enabled: stored[ext.id] !== false,
+    });
     if (HIDDEN_EXTENSION_IDS.has(ext.id)) hiddenExtensions.push(ext);
     else visibleExtensions.push(ext);
   }
@@ -52,6 +68,12 @@ function createHiddenExtensionsSection(hiddenExtensions, stored) {
 
 function createExtensionCard(ext, stored) {
   const enabled = stored[ext.id] !== false;
+  ytLog("createExtensionCard", {
+    id: ext.id,
+    enabled,
+    hasCopyAction: Boolean(ext.copyIconAction),
+    hasLiveAction: Boolean(ext.liveAction),
+  });
 
   const card = document.createElement("div");
   card.className = "ext-card";
@@ -110,6 +132,14 @@ function createExtensionCard(ext, stored) {
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
             </button>
+            ${ext.id === "youtube-transcript-copy" ? `
+              <button class="ext-copy-icon" data-action="openYoutubeWatchFromShorts" title="Open Shorts in watch page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M7 17L17 7"></path>
+                  <path d="M7 7h10v10"></path>
+                </svg>
+              </button>
+            ` : ""}
           </div>
         ` : ""}
       </div>
@@ -193,6 +223,7 @@ function escapeHtml(value) {
 }
 
 function handleMenuAction(action, button) {
+  ytLog("handleMenuAction invoked", { action });
   if (action === "openNewNote") {
     chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
       chrome.runtime.sendMessage({
@@ -206,28 +237,61 @@ function handleMenuAction(action, button) {
 
   if (action === "copyYoutubeTranscript") {
     copyYoutubeTranscript(button);
+    return;
+  }
+
+  if (action === "openYoutubeWatchFromShorts") {
+    openYoutubeWatchFromShorts(button);
   }
 }
 
 function copyYoutubeTranscript(button) {
   const originalTitle = button.getAttribute("title") || "Copy";
+  ytLog("copyYoutubeTranscript: click", {
+    originalTitle,
+    buttonDisabled: button.disabled,
+  });
   button.disabled = true;
   button.setAttribute("title", "Copying transcript...");
 
   chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
+    ytLog("copyYoutubeTranscript: active tab query result", {
+      hasTab: Boolean(activeTab),
+      tabId: activeTab?.id ?? null,
+      url: activeTab?.url || "",
+      title: activeTab?.title || "",
+    });
     if (!activeTab?.id) {
+      ytWarn("copyYoutubeTranscript: no active tab id");
       flashCopyIconResult(button, originalTitle, "No active tab");
       return;
     }
 
+    ytLog("copyYoutubeTranscript: requesting transcript", {
+      tabId: activeTab.id,
+      url: activeTab.url || "",
+    });
     requestTranscriptFromTab(activeTab.id, (response, error) => {
+      ytLog("copyYoutubeTranscript: transcript response", {
+        ok: Boolean(response?.ok),
+        hasTranscript: Boolean(response?.transcript),
+        responseError: response?.error || "",
+        runtimeError: error?.message || "",
+      });
       if (error || !response?.ok || !response?.transcript) {
+        ytWarn("copyYoutubeTranscript: request failed", {
+          mappedError: mapTranscriptError(error, response),
+        });
         flashCopyIconResult(button, originalTitle, mapTranscriptError(error, response));
         return;
       }
 
+      ytLog("copyYoutubeTranscript: clipboard write start", {
+        chars: response.transcript.length,
+      });
       navigator.clipboard.writeText(response.transcript)
         .then(() => {
+          ytLog("copyYoutubeTranscript: clipboard write success");
           button.classList.add("copied");
           button.disabled = false;
           button.setAttribute("title", "Copied!");
@@ -237,6 +301,7 @@ function copyYoutubeTranscript(button) {
           }, 1600);
         })
         .catch(() => {
+          ytWarn("copyYoutubeTranscript: clipboard write failed");
           flashCopyIconResult(button, originalTitle, "Clipboard blocked");
         });
     });
@@ -244,41 +309,53 @@ function copyYoutubeTranscript(button) {
 }
 
 function requestTranscriptFromTab(tabId, callback) {
+  ytLog("requestTranscriptFromTab start", { tabId });
   sendMessageWithInjection(
     tabId,
     { action: "getYoutubeTranscript" },
     "extensions/youtube-transcript-copy/content.js",
-    (response, error) => {
-      if (!error && response?.ok && response?.transcript) {
-        callback(response, null);
-        return;
-      }
-
-      runMainWorldTranscriptFallback(tabId, (fallbackResponse, fallbackError) => {
-        if (!fallbackError && fallbackResponse?.ok && fallbackResponse?.transcript) {
-          callback(fallbackResponse, null);
-          return;
-        }
-
-        callback(response || fallbackResponse, error || fallbackError);
-      });
-    }
+    callback
   );
 }
 
 function sendMessageWithInjection(tabId, message, contentScript, callback) {
+  ytLog("sendMessageWithInjection entry", {
+    tabId,
+    action: message?.action || "",
+    contentScript,
+  });
   chrome.tabs.sendMessage(tabId, message, (response) => {
     const firstError = chrome.runtime.lastError;
     if (!firstError) {
+      ytLog("sendMessageWithInjection: primary sendMessage succeeded", { tabId });
+      ytLog("sendMessageWithInjection: primary response summary", {
+        hasResponse: Boolean(response),
+        ok: Boolean(response?.ok),
+        hasTranscript: Boolean(response?.transcript),
+        responseError: response?.error || "",
+      });
       callback(response, null);
       return;
     }
 
-    if (!String(firstError.message || "").includes("Receiving end does not exist")) {
+    ytWarn("sendMessageWithInjection: primary sendMessage error", {
+      tabId,
+      message: firstError.message || "",
+      shouldInject: shouldInjectAndRetry(firstError),
+    });
+    if (!shouldInjectAndRetry(firstError)) {
+      ytWarn("sendMessageWithInjection: sendMessage failed", {
+        tabId,
+        message: firstError.message || "",
+      });
       callback(response, firstError);
       return;
     }
 
+    ytLog("sendMessageWithInjection: injecting content script", {
+      tabId,
+      contentScript,
+    });
     chrome.scripting.executeScript(
       {
         target: { tabId },
@@ -287,11 +364,33 @@ function sendMessageWithInjection(tabId, message, contentScript, callback) {
       () => {
         const injectionError = chrome.runtime.lastError;
         if (injectionError) {
+          ytWarn("sendMessageWithInjection: injection failed", {
+            tabId,
+            message: injectionError.message || "",
+          });
           callback(null, injectionError);
           return;
         }
 
+        ytLog("sendMessageWithInjection: retrying sendMessage", { tabId });
         chrome.tabs.sendMessage(tabId, message, (retryResponse) => {
+          if (chrome.runtime.lastError) {
+            ytWarn("sendMessageWithInjection: retry failed", {
+              tabId,
+              message: chrome.runtime.lastError.message || "",
+            });
+          }
+          if (!chrome.runtime.lastError && !retryResponse) {
+            ytWarn("sendMessageWithInjection: retry got empty response", { tabId });
+          }
+          if (!chrome.runtime.lastError) {
+            ytLog("sendMessageWithInjection: retry response summary", {
+              hasResponse: Boolean(retryResponse),
+              ok: Boolean(retryResponse?.ok),
+              hasTranscript: Boolean(retryResponse?.transcript),
+              responseError: retryResponse?.error || "",
+            });
+          }
           callback(retryResponse, chrome.runtime.lastError || null);
         });
       }
@@ -299,227 +398,31 @@ function sendMessageWithInjection(tabId, message, contentScript, callback) {
   });
 }
 
-function runMainWorldTranscriptFallback(tabId, callback) {
-  const run = (useMainWorld) => {
-    const scriptConfig = {
-      target: { tabId },
-      func: async () => {
-        const result = { ok: false, error: "Failed to get transcript." };
-
-        try {
-          const videoId = (() => {
-            try {
-              const parsed = new URL(window.location.href);
-              const host = parsed.hostname.replace(/^www\./, "");
-              if (host === "youtube.com" || host === "m.youtube.com") {
-                const vParam = parsed.searchParams.get("v");
-                if (/^[A-Za-z0-9_-]{11}$/.test(vParam || "")) return vParam;
-                const shortsMatch = parsed.pathname.match(/^\/shorts\/([^/?#]+)/);
-                if (shortsMatch && /^[A-Za-z0-9_-]{11}$/.test(shortsMatch[1])) {
-                  return shortsMatch[1];
-                }
-              }
-            } catch {
-              return "";
-            }
-            return "";
-          })();
-
-          if (!videoId) {
-            result.error = "Open a YouTube video page";
-            return result;
-          }
-
-          const html = document.documentElement?.innerHTML || "";
-          const apiKeyMatch = html.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
-          const clientNameMatch = html.match(/"INNERTUBE_CONTEXT_CLIENT_NAME":(\d+)/);
-          const clientVersionMatch =
-            html.match(/"INNERTUBE_CONTEXT_CLIENT_VERSION":"([^"]+)"/);
-          const paramsMatch =
-            html.match(/"getTranscriptEndpoint":\{"params":"([^"]+)"\}/);
-
-          const contextToken = '"INNERTUBE_CONTEXT":';
-          const contextIndex = html.indexOf(contextToken);
-          if (
-            !apiKeyMatch ||
-            !paramsMatch ||
-            contextIndex === -1
-          ) {
-            result.error = "Could not read YouTube metadata";
-            return result;
-          }
-
-          const contextStart = html.indexOf("{", contextIndex + contextToken.length);
-          if (contextStart === -1) {
-            result.error = "Could not read YouTube metadata";
-            return result;
-          }
-
-          const sliceBalancedObject = (text, startIndex) => {
-            let depth = 0;
-            let inString = false;
-            let escaped = false;
-
-            for (let i = startIndex; i < text.length; i++) {
-              const char = text[i];
-
-              if (inString) {
-                if (escaped) escaped = false;
-                else if (char === "\\") escaped = true;
-                else if (char === '"') inString = false;
-                continue;
-              }
-
-              if (char === '"') {
-                inString = true;
-                continue;
-              }
-
-              if (char === "{") depth++;
-              else if (char === "}") {
-                depth--;
-                if (depth === 0) return text.slice(startIndex, i + 1);
-              }
-            }
-
-            return "";
-          };
-
-          const contextJsonText = sliceBalancedObject(html, contextStart);
-          if (!contextJsonText) {
-            result.error = "Could not read YouTube metadata";
-            return result;
-          }
-
-          let context;
-          try {
-            context = JSON.parse(contextJsonText);
-          } catch {
-            result.error = "Could not read YouTube metadata";
-            return result;
-          }
-
-          const decodeInline = (value) =>
-            String(value || "")
-              .replaceAll("\\u0026", "&")
-              .replaceAll("\\u003d", "=")
-              .replaceAll("\\u0025", "%")
-              .replaceAll("\\/", "/");
-
-          const apiKey = decodeInline(apiKeyMatch[1]);
-          const transcriptParams = decodeInline(paramsMatch[1]);
-          const endpoint =
-            `/youtubei/v1/get_transcript?prettyPrint=false&key=${encodeURIComponent(apiKey)}`;
-
-          const headers = { "Content-Type": "application/json" };
-          if (clientNameMatch?.[1]) {
-            headers["X-Youtube-Client-Name"] = clientNameMatch[1];
-          }
-          if (clientVersionMatch?.[1]) {
-            headers["X-Youtube-Client-Version"] = decodeInline(clientVersionMatch[1]);
-          }
-          if (context?.client?.visitorData) {
-            headers["X-Goog-Visitor-Id"] = context.client.visitorData;
-          }
-
-          const decodeURIComponentSafe = (value) => {
-            try {
-              return decodeURIComponent(value);
-            } catch {
-              return "";
-            }
-          };
-          const paramsCandidates = [
-            transcriptParams,
-            decodeURIComponentSafe(transcriptParams),
-          ].filter(Boolean);
-
-          const collectCueLines = (node, lines) => {
-            if (!node || typeof node !== "object") return;
-
-            if (Array.isArray(node)) {
-              node.forEach((item) => collectCueLines(item, lines));
-              return;
-            }
-
-            if (
-              node.transcriptCueRenderer &&
-              typeof node.transcriptCueRenderer === "object"
-            ) {
-              const cue = node.transcriptCueRenderer.cue || node.transcriptCueRenderer;
-              let line = "";
-              if (typeof cue?.simpleText === "string") line = cue.simpleText;
-              else if (Array.isArray(cue?.runs)) {
-                line = cue.runs.map((run) => run?.text || "").join("");
-              }
-
-              line = String(line || "").replace(/\s+/g, " ").trim();
-              if (line && lines[lines.length - 1] !== line) lines.push(line);
-            }
-
-            Object.values(node).forEach((value) => collectCueLines(value, lines));
-          };
-
-          for (const params of paramsCandidates) {
-            const response = await fetch(endpoint, {
-              method: "POST",
-              credentials: "include",
-              headers,
-              body: JSON.stringify({
-                context,
-                params,
-              }),
-            });
-            if (!response.ok) continue;
-
-            const payload = await response.json();
-            const lines = [];
-            collectCueLines(payload, lines);
-            const transcript = lines.join("\n").trim();
-            if (transcript) {
-              return { ok: true, transcript };
-            }
-          }
-
-          result.error = "No transcript available";
-          return result;
-        } catch (error) {
-          result.error =
-            error && typeof error.message === "string"
-              ? error.message
-              : "Failed to get transcript.";
-          return result;
-        }
-      },
-    };
-
-    if (useMainWorld) scriptConfig.world = "MAIN";
-
-    chrome.scripting.executeScript(scriptConfig, (results) => {
-      if (chrome.runtime.lastError) {
-        if (
-          useMainWorld &&
-          String(chrome.runtime.lastError.message || "").toLowerCase().includes("world")
-        ) {
-          run(false);
-          return;
-        }
-        callback(null, chrome.runtime.lastError);
-        return;
-      }
-
-      callback(results?.[0]?.result || null, null);
-    });
-  };
-
-  run(true);
+function shouldInjectAndRetry(error) {
+  const message = String(error?.message || "").toLowerCase();
+  const result =
+    message.includes("receiving end does not exist") ||
+    message.includes("message port closed before a response was received");
+  ytLog("shouldInjectAndRetry evaluated", {
+    message,
+    result,
+  });
+  return result;
 }
 
 function mapTranscriptError(error, response) {
+  ytLog("mapTranscriptError input", {
+    runtimeError: error?.message || "",
+    responseError: response?.error || "",
+    ok: Boolean(response?.ok),
+    hasTranscript: Boolean(response?.transcript),
+  });
   if (response?.error) {
-    if (response.error.includes("No transcript")) return "No transcript available";
-    if (response.error.includes("Open a YouTube")) return "Open a YouTube video page";
-    if (response.error.includes("metadata")) return "Could not read YouTube metadata";
+    if (response.error.includes("does not have a transcript")) return "No transcript";
+    if (response.error.includes("Open a YouTube")) return "Open a YouTube video";
+    if (response.error.includes("Could not open")) return "Could not open transcript";
+    if (response.error.includes("Transcript did not load")) return "Transcript timed out";
+    if (response.error.includes("empty")) return "Transcript was empty";
   }
 
   if (!error?.message) return "Failed";
@@ -527,7 +430,131 @@ function mapTranscriptError(error, response) {
   return "Copy failed";
 }
 
+function openYoutubeWatchFromShorts(button) {
+  const originalTitle = button.getAttribute("title") || "Open watch";
+  ytLog("openYoutubeWatchFromShorts: click", {
+    originalTitle,
+    buttonDisabled: button.disabled,
+  });
+  button.disabled = true;
+  button.setAttribute("title", "Opening watch page...");
+
+  chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
+    ytLog("openYoutubeWatchFromShorts: active tab query result", {
+      hasTab: Boolean(activeTab),
+      tabId: activeTab?.id ?? null,
+      url: activeTab?.url || "",
+    });
+    if (!activeTab?.id || !activeTab.url) {
+      flashCopyIconResult(button, originalTitle, "No active tab");
+      return;
+    }
+
+    if (!isYoutubeShortsUrl(activeTab.url)) {
+      ytWarn("openYoutubeWatchFromShorts: active tab is not Shorts", {
+        url: activeTab.url || "",
+      });
+      flashCopyIconResult(button, originalTitle, "Open a Shorts page");
+      return;
+    }
+
+    const videoId = getYoutubeVideoIdFromUrl(activeTab.url);
+    ytLog("openYoutubeWatchFromShorts: parsed video id", { videoId });
+    if (!videoId) {
+      flashCopyIconResult(button, originalTitle, "No Shorts video id");
+      return;
+    }
+
+    const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+    ytLog("openYoutubeWatchFromShorts: opening watch URL", { watchUrl });
+    chrome.tabs.update(activeTab.id, { url: watchUrl }, () => {
+      if (chrome.runtime.lastError) {
+        ytWarn("openYoutubeWatchFromShorts: tab update failed", {
+          message: chrome.runtime.lastError.message || "",
+        });
+        flashCopyIconResult(button, originalTitle, "Could not open watch");
+        return;
+      }
+
+      button.classList.add("copied");
+      button.disabled = false;
+      button.setAttribute("title", "Opened watch page");
+      setTimeout(() => {
+        button.classList.remove("copied");
+        button.setAttribute("title", originalTitle);
+      }, 1600);
+    });
+  });
+}
+
+function isYoutubeShortsUrl(rawUrl) {
+  ytLog("isYoutubeShortsUrl input", { rawUrl });
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    ytWarn("isYoutubeShortsUrl invalid URL", { rawUrl });
+    return false;
+  }
+
+  const host = parsed.hostname.replace(/^www\./, "");
+  const result =
+    (host === "youtube.com" || host === "m.youtube.com") &&
+    /^\/shorts\/[^/?#]+/.test(parsed.pathname);
+  ytLog("isYoutubeShortsUrl evaluated", {
+    host,
+    pathname: parsed.pathname,
+    result,
+  });
+  return result;
+}
+
+function getYoutubeVideoIdFromUrl(rawUrl) {
+  ytLog("getYoutubeVideoIdFromUrl input", { rawUrl });
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    ytWarn("getYoutubeVideoIdFromUrl invalid URL", { rawUrl });
+    return "";
+  }
+
+  const host = parsed.hostname.replace(/^www\./, "");
+  if (host === "youtube.com" || host === "m.youtube.com") {
+    const shortsMatch = parsed.pathname.match(/^\/shorts\/([^/?#]+)/);
+    if (shortsMatch?.[1]) {
+      ytLog("getYoutubeVideoIdFromUrl shorts match", { id: shortsMatch[1] });
+      return shortsMatch[1];
+    }
+
+    const vParam = parsed.searchParams.get("v");
+    if (vParam) {
+      ytLog("getYoutubeVideoIdFromUrl v param match", { id: vParam });
+      return vParam;
+    }
+  }
+
+  if (host === "youtu.be") {
+    const id = parsed.pathname.split("/").filter(Boolean)[0];
+    if (id) {
+      ytLog("getYoutubeVideoIdFromUrl youtu.be match", { id });
+      return id;
+    }
+  }
+
+  ytWarn("getYoutubeVideoIdFromUrl no id found", {
+    host,
+    pathname: parsed.pathname,
+    search: parsed.search,
+  });
+  return "";
+}
+
 function flashCopyIconResult(button, originalTitle, failureTitle) {
+  ytWarn("flashCopyIconResult", {
+    originalTitle,
+    failureTitle,
+  });
   button.classList.add("error");
   button.setAttribute("title", failureTitle);
   setTimeout(() => {
@@ -536,3 +563,7 @@ function flashCopyIconResult(button, originalTitle, failureTitle) {
     button.disabled = false;
   }, 1600);
 }
+
+function ytLog(_message, _details) {}
+
+function ytWarn(_message, _details) {}

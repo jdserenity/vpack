@@ -12,7 +12,7 @@ const EXTENSIONS = [
     id: "youtube-transcript-copy",
     name: "YouTube Transcript Copy",
     description: "Copies the full transcript of the current YouTube video to your clipboard.",
-    version: "0.1.0",
+    version: "0.3.1",
     matches: [
       "https://www.youtube.com/*",
       "https://youtube.com/*",
