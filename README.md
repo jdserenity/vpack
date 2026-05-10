@@ -1,44 +1,27 @@
 # VPack
 
-A single Chrome extension that bundles multiple micro extensions, each doing one specific thing. Avoids cluttering the extensions page while letting you customize your browser however you want.
+VPack is a single Chrome Manifest V3 extension that bundles several personal micro extensions behind one popup menu.
 
-## Structure
+## Install (unpacked)
 
-```
-VPack/
-  manifest.json          # Chrome MV3 extension manifest
-  background.js          # Service worker - injects scripts for enabled extensions
-  registry.js            # Central list of all micro extensions
-  menu/                  # Popup UI (click toolbar icon)
-    menu.html
-    menu.css
-    menu.js
-  extensions/            # Each micro extension gets its own folder
-    hn-auto-collapse/
-      content.js
-```
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select this repo folder.
+4. Pin `VPack` if you want quick access to the popup.
 
-## How it works
+## Included micro extensions
 
-- **registry.js** defines each micro extension: id, name, description, version, URL match patterns, and content script path.
-- **background.js** listens for page loads and dynamically injects the content script for any enabled micro extension whose URL pattern matches.
-- The **popup menu** (toolbar icon) shows all micro extensions with version numbers and individual toggle switches. State is persisted in `chrome.storage.local`.
+- `Quick Copy` (`word-count`): shows page word count in the popup and copies extracted main-page text.
+- `YouTube Transcript Copy` (`youtube-transcript-copy`): copies transcript text from the active YouTube watch page.
+- `Online Notes Hijack` (`onlinenotes-expand`): makes the onlinenotes editor fill the viewport; popup action creates a fresh note.
+- `Geohot Blog Dark Mode` (`geohot-blog-dark`): injects dark styling on `geohot.github.io/blog`.
+- `HN Auto Collapse` (`hn-auto-collapse`): collapses Hacker News thread comments except first 5 top-level comments and each first reply.
+- `YouTube Speed Hotkeys` (`youtube-speed-hotkeys`): configurable hotkeys for +/-0.05 speed changes on YouTube.
 
-## Adding a new micro extension
+## Development
 
-1. Create a folder under `extensions/` with your content script.
-2. Add an entry to the `EXTENSIONS` array in `registry.js` with `id`, `name`, `description`, `version`, `matches` (URL patterns), and `contentScript` (path to the script).
-3. Reload the extension in `chrome://extensions`.
-
-## Current micro extensions
-
-| Name | Version | Description |
-|------|---------|-------------|
-| HN Auto Collapse | 0.0.3 | Auto-collapses Hacker News comments, showing the first 5 top-level comments and their first reply |
-| YouTube Speed Hotkeys | 0.1.0 | Adds configurable hotkeys to increase/decrease YouTube playback speed by 0.05 |
-
-## Install
-
-1. Go to `chrome://extensions`
-2. Enable "Developer mode"
-3. Click "Load unpacked" and select the `VPack/` folder
+- Edit extension metadata in `registry.js`.
+- Add or update behavior in `extensions/<id>/content.js`.
+- Reload the unpacked extension in `chrome://extensions` after changes.
+- Popup/background behavior lives in `menu/` and `background.js`.
+- For deeper project details, see `ARCHITECTURE.md`.
