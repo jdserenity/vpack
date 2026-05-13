@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET_DIR="/Users/jd/Library/CloudStorage/ProtonDrive-jd@levier.cc-folder/coding/vpack"
+TARGET_DIR="/Users/jd/Library/CloudStorage/ProtonDrive-jd@levier.cc-folder/code/vpack"
 TARGET_PARENT="$(dirname "$TARGET_DIR")"
 SOURCE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 TMP_DIR="${TARGET_PARENT}/.vpack_push_tmp_$$"
