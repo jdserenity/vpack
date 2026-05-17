@@ -7,12 +7,13 @@ VPack is a single Manifest V3 browser extension with:
 - one background service worker (`background.js`)
 - one popup UI (`menu/menu.html` + `menu/menu.js` + `menu/menu.css`)
 - a registry of micro extensions (`registry.js`)
-- one content script per micro extension (`extensions/*/content.js`)
+- one isolated content script per micro extension (`extensions/*/content.js`), plus optional companion scripts referenced from `manifest.json`
 
 `manifest.json` currently declares:
 
 - permissions: `storage`, `scripting`, `tabs`
 - host permissions: `<all_urls>`
+- one static content script: `extensions/onlinenotes-expand/page-clipboard-guard.js` on `https://onlinenotes.app/*`, `run_at: document_start`, `world: MAIN`
 - popup: `menu/menu.html`
 - background service worker: `background.js`
 
@@ -30,6 +31,7 @@ extensions/
   geohot-blog-dark/content.js
   hn-auto-collapse/content.js
   onlinenotes-expand/content.js
+  onlinenotes-expand/page-clipboard-guard.js
   word-count/content.js
   youtube-speed-hotkeys/content.js
   youtube-transcript-copy/content.js
@@ -135,6 +137,9 @@ For transcript requests, popup uses a send-then-inject retry path:
 
 - matches `https://onlinenotes.app/*`
 - injects fullscreen editor CSS overrides
+- targets only the largest visible editor element (ignores hidden utility fields and URL-only share textareas)
+- keeps the same editor element locked while it stays in the DOM and the user focuses it (avoids autosave retarget flips)
+- `page-clipboard-guard.js` (manifest `content_scripts`, `document_start`, `world: MAIN`) wraps `navigator.clipboard.writeText` and `navigator.clipboard.write` to drop payloads that are only bare single-line `https://onlinenotes.app/...` share URLs
 - remaps Tab key in editor to insert two spaces
 - uses `ResizeObserver` to keep editor locked to viewport size
 - popup action creates `https://onlinenotes.app/` tab, polls for generated permanent note URL, then redirects tab
