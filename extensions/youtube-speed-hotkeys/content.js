@@ -1,6 +1,36 @@
-// YouTube Speed Hotkeys v0.1.0
+// YouTube Speed Hotkeys v0.1.3
 // Configure two shortcuts in VPack popup settings to adjust playback speed by +/-0.05.
+
+function roundToHundredth(num) {
+  return Math.round(num * 100) / 100;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function computeAdjustedPlaybackRate(currentRate, delta, min = 0.05, max = 16) {
+  return clamp(roundToHundredth(currentRate + delta), min, max);
+}
+
+function shouldSyncTrackedRateFromVideo({ spaceHeld, now, ignoreUntil }) {
+  if (spaceHeld) return false;
+  if (now < ignoreUntil) return false;
+  return true;
+}
+
+function shouldRestoreRateAfterSpaceBoost(actualRate, expectedRate) {
+  return Math.abs(roundToHundredth(actualRate) - expectedRate) > 0.001;
+}
+
+function setVideoPlaybackRate(video, rate) {
+  if (!video) return false;
+  video.playbackRate = rate;
+  return true;
+}
+
 (() => {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
   if (window.__vpackYoutubeSpeedHotkeysLoaded) return;
   window.__vpackYoutubeSpeedHotkeysLoaded = true;
 
@@ -14,8 +44,14 @@
     [STORAGE_KEYS.slower]: "Command+Shift+Comma",
   };
 
+  const SPACE_BOOST_RATE_IGNORE_MS = 150;
+
   let fasterHotkey = parseShortcut(DEFAULTS[STORAGE_KEYS.faster]);
   let slowerHotkey = parseShortcut(DEFAULTS[STORAGE_KEYS.slower]);
+  let trackedPlaybackRate = null;
+  let spaceHeld = false;
+  let rateChangeIgnoreUntil = 0;
+  let boundVideo = null;
 
   loadSettings();
   chrome.storage.onChanged.addListener((changes, area) => {
@@ -32,6 +68,7 @@
     "keydown",
     (event) => {
       if (shouldIgnoreKeydown(event)) return;
+      if (event.code === "Space") spaceHeld = true;
 
       if (matchesShortcut(event, fasterHotkey)) {
         event.preventDefault();
@@ -45,6 +82,16 @@
         event.stopPropagation();
         adjustPlaybackRate(-0.05);
       }
+    },
+    true
+  );
+
+  document.addEventListener(
+    "keyup",
+    (event) => {
+      if (event.code !== "Space" || shouldIgnoreKeydown(event)) return;
+      spaceHeld = false;
+      restoreTrackedRateAfterSpaceBoost();
     },
     true
   );
@@ -66,18 +113,59 @@
   }
 
   function adjustPlaybackRate(delta) {
-    const video =
-      document.querySelector("video.html5-main-video") ||
-      document.querySelector("video");
+    const video = getVideoElement();
     if (!video) return;
+    bindVideoRateListener(video);
 
-    video.playbackRate = video.playbackRate + delta;
-    video.playbackRate = clamp(roundToHundredth(video.playbackRate), 0.05, 16);
+    const nextRate = computeAdjustedPlaybackRate(video.playbackRate, delta);
+    trackedPlaybackRate = nextRate;
+    setVideoPlaybackRate(video, nextRate);
     try {
-      showSpeedToast(video.playbackRate);
+      showSpeedToast(nextRate);
     } catch (err) {
       console.error("[VPack][YouTube Speed] Toast render failed:", err);
     }
+  }
+
+  function getVideoElement() {
+    return (
+      document.querySelector("video.html5-main-video") ||
+      document.querySelector("video")
+    );
+  }
+
+  function bindVideoRateListener(video) {
+    if (!video || video === boundVideo) return;
+    boundVideo = video;
+    trackedPlaybackRate = null;
+    video.addEventListener("ratechange", onVideoRateChange);
+  }
+
+  function onVideoRateChange(event) {
+    if (
+      !shouldSyncTrackedRateFromVideo({
+        spaceHeld,
+        now: Date.now(),
+        ignoreUntil: rateChangeIgnoreUntil,
+      })
+    ) {
+      return;
+    }
+    const video = event.target;
+    if (!(video instanceof HTMLMediaElement)) return;
+    trackedPlaybackRate = roundToHundredth(video.playbackRate);
+  }
+
+  function restoreTrackedRateAfterSpaceBoost() {
+    if (trackedPlaybackRate == null) return;
+    const expected = trackedPlaybackRate;
+    rateChangeIgnoreUntil = Date.now() + SPACE_BOOST_RATE_IGNORE_MS;
+    setTimeout(() => {
+      const video = getVideoElement();
+      if (!video) return;
+      if (!shouldRestoreRateAfterSpaceBoost(video.playbackRate, expected)) return;
+      setVideoPlaybackRate(video, expected);
+    }, 0);
   }
 
   function showSpeedToast(rate) {
@@ -222,12 +310,13 @@
     if (raw.length === 1 && /[0-9]/.test(raw)) return `Digit${raw}`;
     return raw;
   }
-
-  function roundToHundredth(num) {
-    return Math.round(num * 100) / 100;
-  }
-
-  function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-  }
 })();
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    computeAdjustedPlaybackRate,
+    shouldSyncTrackedRateFromVideo,
+    shouldRestoreRateAfterSpaceBoost,
+    setVideoPlaybackRate,
+  };
+}

@@ -13,7 +13,7 @@ VPack is a single Manifest V3 browser extension with:
 
 - permissions: `storage`, `scripting`, `tabs`
 - host permissions: `<all_urls>`
-- one static content script: `extensions/onlinenotes-expand/page-clipboard-guard.js` on `https://onlinenotes.app/*`, `run_at: document_start`, `world: MAIN`
+- static MAIN-world content script: `extensions/onlinenotes-expand/page-clipboard-guard.js` on `https://onlinenotes.app/*`, `run_at: document_start`
 - popup: `menu/menu.html`
 - background service worker: `background.js`
 
@@ -163,7 +163,9 @@ For transcript requests, popup uses a send-then-inject retry path:
   - faster: `youtube-speed-hotkeys.settings.hotkeyFaster`
   - slower: `youtube-speed-hotkeys.settings.hotkeySlower`
 - ignores key events while typing in inputs/contenteditable fields
-- adjusts video playback speed by +/-0.05 and clamps to `[0.05, 16]`
+- adjusts video playback speed by +/-0.05 via `video.playbackRate` and clamps to `[0.05, 16]`
+- tracks the last hotkey-set rate and restores it after YouTube's hold-space 2x boost snaps back to 1x
+- syncs tracked rate from `ratechange` when speed is changed via YouTube's own settings UI
 - shows temporary on-page speed toast after each adjustment
 
 ## Deployment Helper

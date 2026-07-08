@@ -55,7 +55,7 @@ const EXTENSIONS = [
     id: "youtube-speed-hotkeys",
     name: "YouTube Speed Hotkeys",
     description: "Use two custom hotkeys to adjust YouTube playback speed by 0.05.",
-    version: "0.1.0",
+    version: "0.1.3",
     matches: [
       "https://www.youtube.com/*",
       "https://youtube.com/*",
