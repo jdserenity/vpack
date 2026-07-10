@@ -1,4 +1,4 @@
-// Clean Pirate Bay v0.1.0
+// Clean Pirate Bay v0.1.1
 // Hides The Pirate Bay search/browse/top results whose main category is Porn.
 
 const HIDDEN_CLASS = "vpack-clean-pirate-bay-hidden";

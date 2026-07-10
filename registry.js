@@ -22,20 +22,6 @@ const EXTENSIONS = [
     copyIconAction: "copyYoutubeTranscript",
   },
   {
-    id: "onlinenotes-expand",
-    name: "Online Notes Hijack",
-    description: "Makes the text editor on onlinenotes.app fill the entire screen. Responsive to Vivaldi tab tiling.",
-    version: "0.2.4",
-    matches: ["https://onlinenotes.app/*"],
-    contentScript: "extensions/onlinenotes-expand/content.js",
-    menuActions: [
-      {
-        label: "Create new note",
-        action: "openNewNote",
-      },
-    ],
-  },
-  {
     id: "geohot-blog-dark",
     name: "Geohot Blog Dark Mode",
     description: "Dark mode for geohot.github.io/blog.",
@@ -81,7 +67,7 @@ const EXTENSIONS = [
     id: "clean-pirate-bay",
     name: "Clean Pirate Bay",
     description: "Hides The Pirate Bay search results whose main category is Porn.",
-    version: "0.1.0",
+    version: "0.1.1",
     matches: ["https://thepiratebay.org/*"],
     contentScript: "extensions/clean-pirate-bay/content.js",
   },
