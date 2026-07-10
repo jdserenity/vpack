@@ -91,7 +91,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     EXTENSIONS.map((e) => e.id),
     (stored) => {
       for (const ext of EXTENSIONS) {
-        if (!stored[ext.id]) continue;
+        // Missing key means enabled (same contract as the popup).
+        if (stored[ext.id] === false) continue;
         const matches = ext.matches.some((pattern) =>
           urlMatchesPattern(tab.url, pattern)
         );

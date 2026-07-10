@@ -40,7 +40,7 @@ Current optional wiring:
 
 ## Runtime
 1. **Install defaults** (`chrome.runtime.onInstalled`): set missing storage keys only — each `ext.id → true`, plus `settings` defaults via `getSettingStorageKey`.
-2. **Inject on load** (`tabs.onUpdated` `status===complete`): for each enabled ext, if any `matches` hits tab URL → `scripting.executeScript` that `contentScript`.
+2. **Inject on load** (`tabs.onUpdated` `status===complete`): for each ext where storage `!== false` (missing = on), if any `matches` hits tab URL → `scripting.executeScript` that `contentScript`.
 3. **Popup** (`menu/menu.js`): load enable flags + setting keys; render cards from `EXTENSIONS`; write toggles/settings to `chrome.storage.local`. `HIDDEN_EXTENSION_IDS` (collapsed `<details>`): `geohot-blog-dark`, `hn-auto-collapse`, `youtube-speed-hotkeys`, `clean-pirate-bay`.
 4. **Popup actions** (`handleMenuAction`):
    - `openNewNote` → bg msg `onlinenotes-open-new` (optional `openerTabId`, `openerTitle`)

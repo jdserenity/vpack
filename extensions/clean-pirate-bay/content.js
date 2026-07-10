@@ -72,6 +72,14 @@ function startCleanPirateBay(doc) {
   ensureHideStyle(documentRef);
   hidePornResults(documentRef);
 
+  // TPB builds the list via document.write + sync XHR; re-run shortly after inject
+  // in case we raced the first paint, and watch for later DOM changes.
+  if (typeof setTimeout === "function") {
+    setTimeout(() => hidePornResults(documentRef), 0);
+    setTimeout(() => hidePornResults(documentRef), 250);
+    setTimeout(() => hidePornResults(documentRef), 1000);
+  }
+
   if (typeof MutationObserver === "undefined" || !documentRef.documentElement) return;
   const mo = new MutationObserver(() => {
     hidePornResults(documentRef);

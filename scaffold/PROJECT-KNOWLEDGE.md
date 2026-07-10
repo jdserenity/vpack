@@ -9,3 +9,8 @@ Keep scaffold/ARCH-LLM.md for confirmed product and system facts only. One home 
 - Results are built client-side by `static/main.js` from apibay.org JSON (not server-rendered HTML tables).
 - Each result is `li.list-entry` with category in `.item-type`. Subcats render as `Porn > HD Movies` links (`/search.php?q=category:5xx`); bare main cat `500` is plain text `"Porn"` with no link.
 - TPB’s own name filter (`filter_list2`) sets `style.display = ''` on matches, so hiding must use a class + `display:none !important` (not only inline `display:none`) or rows come back.
+
+## Enable flags vs injection
+
+- Popup treats a missing storage key as **on** (`stored[id] !== false`).
+- Background injection must use the same rule. Using `if (!stored[id]) continue` treats missing as **off**, so a newly added micro-extension can show enabled in the menu but never inject until something writes `true` (onInstalled may not run on every unpacked Reload if the package version is unchanged).
