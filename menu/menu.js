@@ -6,6 +6,7 @@ const HIDDEN_EXTENSION_IDS = new Set([
   "geohot-blog-dark",
   "hn-auto-collapse",
   "youtube-speed-hotkeys",
+  "clean-pirate-bay",
 ]);
 
 const storageKeys = [

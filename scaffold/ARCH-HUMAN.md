@@ -69,8 +69,9 @@ VPack is one Chrome extension (Manifest V3) that packs several small personal to
 | Geohot Blog Dark Mode | `geohot-blog-dark` | geohot blog | Dark styling *(hidden section in popup)* |
 | HN Auto Collapse | `hn-auto-collapse` | HN item pages | First 5 top-level + first reply open; rest collapsed *(hidden)* |
 | YouTube Speed Hotkeys | `youtube-speed-hotkeys` | YouTube | Configurable faster/slower keys, ±0.05 speed *(hidden)* |
+| Clean Pirate Bay | `clean-pirate-bay` | thepiratebay.org | Hides search results whose main category is Porn *(hidden)* |
 
-**Hidden section:** Geohot dark, HN collapse, and YouTube speed sit under a collapsible “Hidden extensions” block so the main popup stays short. They still work when enabled.
+**Hidden section:** Geohot dark, HN collapse, YouTube speed, and Clean Pirate Bay sit under a collapsible “Hidden extensions” block so the main popup stays short. They still work when enabled.
 
 ---
 

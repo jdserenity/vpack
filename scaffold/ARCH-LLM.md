@@ -36,12 +36,12 @@ Current optional wiring:
 | youtube-transcript-copy | `copyIconAction: copyYoutubeTranscript` |
 | onlinenotes-expand | `menuActions: [{openNewNote}]` |
 | youtube-speed-hotkeys | `settings: hotkeyFaster, hotkeySlower` |
-| geohot-blog-dark, hn-auto-collapse | none |
+| geohot-blog-dark, hn-auto-collapse, clean-pirate-bay | none |
 
 ## Runtime
 1. **Install defaults** (`chrome.runtime.onInstalled`): set missing storage keys only — each `ext.id → true`, plus `settings` defaults via `getSettingStorageKey`.
 2. **Inject on load** (`tabs.onUpdated` `status===complete`): for each enabled ext, if any `matches` hits tab URL → `scripting.executeScript` that `contentScript`.
-3. **Popup** (`menu/menu.js`): load enable flags + setting keys; render cards from `EXTENSIONS`; write toggles/settings to `chrome.storage.local`. `HIDDEN_EXTENSION_IDS` (collapsed `<details>`): `geohot-blog-dark`, `hn-auto-collapse`, `youtube-speed-hotkeys`.
+3. **Popup** (`menu/menu.js`): load enable flags + setting keys; render cards from `EXTENSIONS`; write toggles/settings to `chrome.storage.local`. `HIDDEN_EXTENSION_IDS` (collapsed `<details>`): `geohot-blog-dark`, `hn-auto-collapse`, `youtube-speed-hotkeys`, `clean-pirate-bay`.
 4. **Popup actions** (`handleMenuAction`):
    - `openNewNote` → bg msg `onlinenotes-open-new` (optional `openerTabId`, `openerTitle`)
    - `copyYoutubeTranscript` → tab `getYoutubeTranscript` with send-then-inject retry
@@ -68,6 +68,7 @@ Current optional wiring:
 | geohot-blog-dark | Geohot Blog Dark Mode | `https://geohot.github.io/blog/*` | dark CSS in `<head>` |
 | hn-auto-collapse | HN Auto Collapse | `https://news.ycombinator.com/item*` | keep first 5 top-level + first reply each; click-collapse rest |
 | youtube-speed-hotkeys | YouTube Speed Hotkeys | youtube.com variants | storage hotkeys; ±0.05 `playbackRate` clamp `[0.05,16]`; ignore inputs/contenteditable; restore after space-2x; toast |
+| clean-pirate-bay | Clean Pirate Bay | `https://thepiratebay.org/*` | hide `li.list-entry` whose `.item-type` is main category Porn (`Porn` / `Porn > *`, hrefs `category:5xx` / `top100:5xx`); CSS class + `!important`; MutationObserver |
 
 ## Popup↔content message contract (content scripts)
 - word-count: `getWordCount`
@@ -79,4 +80,4 @@ Current optional wiring:
 - Prod helper: `push_to_prod.sh` copies repo → fixed Proton Drive path `.../ProtonDrive-.../code/vpack` via temp sibling replace.
 
 ## Tests
-`tests/`: `url-matcher`, `menu-css`, `onlinenotes-expand`, `onlinenotes-page-clipboard-guard`, `youtube-speed-hotkeys`.
+`tests/`: `url-matcher`, `menu-css`, `onlinenotes-expand`, `onlinenotes-page-clipboard-guard`, `youtube-speed-hotkeys`, `clean-pirate-bay`.

@@ -77,4 +77,12 @@ const EXTENSIONS = [
       },
     ],
   },
+  {
+    id: "clean-pirate-bay",
+    name: "Clean Pirate Bay",
+    description: "Hides The Pirate Bay search results whose main category is Porn.",
+    version: "0.1.0",
+    matches: ["https://thepiratebay.org/*"],
+    contentScript: "extensions/clean-pirate-bay/content.js",
+  },
 ];
