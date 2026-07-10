@@ -32,7 +32,7 @@ VPack is one Chrome extension (Manifest V3) that packs several small personal to
 1. **`registry.js`** lists every micro-extension (name, URL patterns, which script file, optional settings/buttons). Popup and background both use this list as the source of truth.
 2. **Background** turns tools on by default on first install, and when a tab finishes loading, injects the matching content scripts for enabled tools.
 3. **Popup** draws one card per tool (some sit under “Hidden extensions”), saves toggles/settings, and handles button actions.
-4. **Content scripts** run inside the page (word count, dark mode, speed hotkeys, etc.). Almost all are injected only when needed; Online Notes also has a small script that always starts early so it can guard the clipboard API.
+4. **Content scripts** run inside the page (word count, dark mode, speed hotkeys, etc.). They are injected only when the tool is enabled and the tab URL matches.
 
 ---
 
@@ -45,8 +45,10 @@ VPack is one Chrome extension (Manifest V3) that packs several small personal to
 | `registry.js` | Catalog of micro-extensions |
 | `url-matcher.js` | Simple URL pattern matching (`*`, prefix `…*`, exact; normalizes `//` in paths) |
 | `menu/` | Popup HTML/CSS/JS |
-| `extensions/<id>/` | One folder per tool; main logic in `content.js` |
-| `tests/` | Automated tests (URL matcher, Online Notes, YouTube speed, menu CSS) |
+| `extensions/<id>/` | One folder per active tool; main logic in `content.js` |
+| `extensions/archive/` | Inactive tools kept for possible restore (not in the popup) |
+| `tests/` | Automated tests (URL matcher, YouTube speed, Clean Pirate Bay, menu CSS) |
+| `tests/archive/` | Tests for archived tools |
 | `push_to_prod.sh` | Copy tree to Proton Drive |
 | `scaffold/` | Agent rules + architecture docs (this file, `ARCH-LLM.md`, lessons) |
 
@@ -65,13 +67,14 @@ VPack is one Chrome extension (Manifest V3) that packs several small personal to
 |-----------|-----|---------------|--------|
 | Quick Copy | `word-count` | Any page | Word count + copy cleaned main text |
 | YouTube Transcript Copy | `youtube-transcript-copy` | YouTube | Copy full transcript; optional Shorts → watch button |
-| Online Notes Hijack | `onlinenotes-expand` | onlinenotes.app | Editor fills the window; “Create new note”; clipboard guard against bare share-URL copies |
 | Geohot Blog Dark Mode | `geohot-blog-dark` | geohot blog | Dark styling *(hidden section in popup)* |
 | HN Auto Collapse | `hn-auto-collapse` | HN item pages | First 5 top-level + first reply open; rest collapsed *(hidden)* |
 | YouTube Speed Hotkeys | `youtube-speed-hotkeys` | YouTube | Configurable faster/slower keys, ±0.05 speed *(hidden)* |
-| Clean Pirate Bay | `clean-pirate-bay` | thepiratebay.org | Hides search results whose main category is Porn *(hidden)* |
+| Clean Pirate Bay | `clean-pirate-bay` | thepiratebay.org | Hides search results whose main category is Porn *(hidden)* — v0.1.1 |
 
 **Hidden section:** Geohot dark, HN collapse, YouTube speed, and Clean Pirate Bay sit under a collapsible “Hidden extensions” block so the main popup stays short. They still work when enabled.
+
+**Archived (not in popup):** Online Notes Hijack lives under `extensions/archive/onlinenotes-expand/` with restore steps in that folder’s `RESTORE.md`.
 
 ---
 
@@ -79,6 +82,6 @@ VPack is one Chrome extension (Manifest V3) that packs several small personal to
 
 1. Add or edit `extensions/<id>/content.js` (and any companion scripts).
 2. Register it in `registry.js` (`matches`, `contentScript`, optional settings/actions).
-3. If something must run in the page’s real JS world at start (like the Online Notes clipboard guard), also declare it under `content_scripts` in `manifest.json`.
+3. If something must run in the page’s real JS world at document start, declare it under `content_scripts` in `manifest.json` with `"world": "MAIN"`.
 4. Reload the unpacked extension in Chrome.
 5. Prefer tests under `tests/` for logic that isn’t pure UI.

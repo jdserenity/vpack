@@ -225,17 +225,6 @@ function escapeHtml(value) {
 
 function handleMenuAction(action, button) {
   ytLog("handleMenuAction invoked", { action });
-  if (action === "openNewNote") {
-    chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
-      chrome.runtime.sendMessage({
-        action: "onlinenotes-open-new",
-        openerTabId: activeTab?.id,
-        openerTitle: activeTab?.title ?? null,
-      });
-    });
-    return;
-  }
-
   if (action === "copyYoutubeTranscript") {
     copyYoutubeTranscript(button);
     return;

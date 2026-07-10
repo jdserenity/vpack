@@ -8,14 +8,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://onlinenotes.app/*"],
-      "js": ["extensions/onlinenotes-expand/page-clipboard-guard.js"],
-      "run_at": "document_start",
-      "world": "MAIN"
-    }
-  ],
   "action": {
     "default_popup": "menu/menu.html",
     "default_title": "VPack"

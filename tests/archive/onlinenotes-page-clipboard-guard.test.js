@@ -7,7 +7,9 @@ test("page clipboard guard patches write and writeText at document_start", () =>
   const p = path.join(
     __dirname,
     "..",
+    "..",
     "extensions",
+    "archive",
     "onlinenotes-expand",
     "page-clipboard-guard.js"
   );

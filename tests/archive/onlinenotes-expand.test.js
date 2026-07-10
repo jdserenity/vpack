@@ -5,7 +5,7 @@ const {
   isBareOnlinenotesShareUrl,
   isShareUrlOnlyTextarea,
   pickPrimaryEditor,
-} = require("../extensions/onlinenotes-expand/content.js");
+} = require("../../extensions/archive/onlinenotes-expand/content.js");
 
 function makeEditor(options = {}) {
   const {

@@ -13,10 +13,10 @@ VPack is a single Chrome Manifest V3 extension that bundles several personal mic
 
 - `Quick Copy` (`word-count`): shows page word count in the popup and copies extracted main-page text.
 - `YouTube Transcript Copy` (`youtube-transcript-copy`): copies transcript text from the active YouTube watch page.
-- `Online Notes Hijack` (`onlinenotes-expand`): makes the onlinenotes editor fill the viewport; popup action creates a fresh note.
 - `Geohot Blog Dark Mode` (`geohot-blog-dark`): injects dark styling on `geohot.github.io/blog`.
 - `HN Auto Collapse` (`hn-auto-collapse`): collapses Hacker News thread comments except first 5 top-level comments and each first reply.
 - `YouTube Speed Hotkeys` (`youtube-speed-hotkeys`): configurable hotkeys for +/-0.05 speed changes on YouTube.
+- `Clean Pirate Bay` (`clean-pirate-bay`): hides The Pirate Bay results whose main category is Porn.
 
 ## Development
 
